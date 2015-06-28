@@ -176,3 +176,8 @@ exports.toSearch = function(req, res, next) {
     }
 };
 
+exports.staticMap = function(req, res, next){
+    var data = require('./kinsan-illigal-total.json');
+    res.send(data);
+};
+

@@ -5,7 +5,7 @@ var rootPath = path.normalize(__dirname + '/..');
 
 
 module.exports = {
-    appName: '天龍特公地',
+    appName: '金山街違建地圖',
 
     development: {
         port: process.env.PORT || '8089',

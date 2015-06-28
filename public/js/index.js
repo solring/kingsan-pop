@@ -52,6 +52,8 @@
     };
 
     var API = "/api/search";
+    var STATIC_API = "/api/kinsan";
+
 
     var FIELDS = ['Block','Area','Unit','Address'];
 
@@ -68,18 +70,12 @@
         var maploading = $("#map-loading");
         maploading.addClass('active');
        
-        var block = search.get('Block');
-
-        if (block === undefined ||  block === ''){
-            block = '中正區';
-        }
-
-        var lat = taipei[block].lat;
-        var lng = taipei[block].lng;
+        var lat = 24.7768925;
+        var lng = 121.0239258;
 
         var popinfo = new google.maps.InfoWindow();
         var map = new google.maps.Map(document.getElementById("map-canvas"), {
-          zoom: 15,
+          zoom: 16,
           scrollwheel: false,
           center: {
             lat: lat,
@@ -87,7 +83,8 @@
           }
         });
 
-        var JsonUrl = getAPIUrl(query);
+        //var JsonUrl = getAPIUrl(query);
+        var JsonUrl = STATIC_API;
         console.log("JSON URL: " + JsonUrl);
 
         $.getJSON(JsonUrl, function(GeoJSON){
@@ -105,24 +102,17 @@
 
 
         map.data.setStyle( function(feature){
-            var renew_stat = feature.getProperty("都更狀態");
-            var color = 'red';
-            if(!renew_stat || renew_stat.length === 0){
-                color = 'yellow';
+            var stat = feature.getProperty("listed");
+            var icon_path = 'marker_orange.png';
+            if(stat!="YES"){
+                icon_path = 'marker.png';
             }
             return {
-                fillColor: color,
-                strokeWeight: 1,
-                fillOpacity: 0.2
+                icon: "http://maps.google.com/mapfiles/"+icon_path
             };
         });
 
         map.data.addListener('addfeature', function(event){
-            var upload_image = $.trim(event.feature.getProperty('upload_image'));
-            
-            if (upload_image === '') {
-                return;
-            }
 
             var lat = Number(event.feature.getProperty('ycenter'));
             var lng = Number(event.feature.getProperty('xcenter'));
@@ -148,42 +138,21 @@
         });
 
         map.data.addListener("click", function(event) {
-            var properties = ["面積", "路段", "地號", "管理者", "使用分區"];
+            var properties = ["address", "listed", "floorNum"];
             var content = "<table class='ui table segment'>";
 
             properties.forEach(function(element, index, array) {
                 var property = event.feature.getProperty(element);
-                if (element === "面積"){
-                  property += " 平方公尺";  
-                }
                 content += "<tr><td>" + element + "</td><td>" + property + "</td></tr>";
             });
             //for urban-renew information
-            var id = $.trim(event.feature.getProperty('id'));
-            var caseurl = $.trim(event.feature.getProperty("caseurl"));
-            var status = $.trim(event.feature.getProperty("都更狀態"));
-            var upload_image = $.trim(event.feature.getProperty('upload_image'));
-            
             var image_tpl = '';
-            var renew_tpl = '';
-            
-            if (status !== '') {
-                renew_tpl = "<a href="+caseurl+" target='_blank'>"+ status + "</a>";
-            }
+            var addr = event.feature.getProperty('address');
 
-            if (upload_image !== '') {
-                var image_url = '/u/images/' + upload_image;
-                image_tpl = "<a class='js_image ui medium image' href='" + image_url + "' target='_blank'><img src='"+ image_url +"' width='50px' /></a>";
-                image_tpl += "<div class='ui modal js_modal'><i class='close icon'></i><div class='content ui center aligned segment'><img src='"+ image_url +"' /></div></div>";
-            }
-
-
-            content += "<tr><td>都更狀態</td><td>"+ renew_tpl +"</td></tr>";
-            content += "<tr><td>圖片：</td><td class='js_upload_image'>"+ image_tpl + "</td></tr>";
             content += "<tr><td>提供圖片</td><td><form id='upload_form' action='/image/upload' method='post' enctype='multipart/form-data'>";
-            content += "<input type='hidden' name='id' value='"+ id + "' />";
+            content += "<input type='hidden' name='id' value='"+ addr + "' />";
             content += "<input type='file' name='image'/><button type='submit' id='img_upload'>上傳</button>";
-            content += "<img src='/image/exposure?id="+ id +"' width='0px'/>";
+            content += "<img src='/image/exposure?id="+ addr +"' width='0px'/>";
             content += "</form></td></tr>";
             content += "</table>";
             
@@ -296,4 +265,7 @@
 
     jqAddress.mousedown( updateAddress );
 
+    $('document').ready(function(){
+        showMap();
+    });
 })();
